@@ -1,0 +1,22 @@
+syntax = "proto3";
+
+option csharp_namespace = "RateLimiter.Reader.Grpc";
+
+package reader;
+
+service Reader {
+  rpc GetAllLimits (GetAllLimitsRequest) returns (GetAllLimitsResponse);
+}
+
+message RateLimit {
+  string route = 1;
+  int32 requests_per_minute = 2;
+  string last_updated = 3;
+}
+
+message GetAllLimitsRequest {
+}
+
+message GetAllLimitsResponse {
+  repeated RateLimit limits = 1;
+}

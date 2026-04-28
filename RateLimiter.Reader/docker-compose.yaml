@@ -1,0 +1,27 @@
+version: "3.9"
+
+services:
+  mongo:
+    image: mongo:6
+    container_name: writer-mongo
+    restart: unless-stopped
+    command: ["--replSet", "rs0", "--bind_ip_all"]
+    ports:
+      - "27017:27017"
+    volumes:
+      - writer-mongo-data:/data/db
+
+  mongo-express:
+    image: mongo-express:1.0.2-20
+    container_name: writer-mongo-express
+    restart: unless-stopped
+    environment:
+      ME_CONFIG_MONGODB_SERVER: mongo
+      ME_CONFIG_MONGODB_ENABLE_ADMIN: "true"
+    ports:
+      - "8081:8081"
+    depends_on:
+      - mongo
+
+volumes:
+  writer-mongo-data:

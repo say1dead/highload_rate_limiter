@@ -1,0 +1,80 @@
+version: "3.9"
+
+services:
+  mongo:
+    image: mongo:6
+    container_name: writer-mongo
+    restart: unless-stopped
+    command: ["--replSet", "rs0", "--bind_ip_all"]
+    ports:
+      - "27017:27017"
+    volumes:
+      - writer-mongo-data:/data/db
+
+  mongo-express:
+    image: mongo-express:1.0.2-20
+    container_name: writer-mongo-express
+    restart: unless-stopped
+    environment:
+      ME_CONFIG_MONGODB_SERVER: mongo
+      ME_CONFIG_MONGODB_ENABLE_ADMIN: "true"
+    ports:
+      - "8081:8081"
+    depends_on:
+      - mongo
+
+  redis:
+    image: redis:7
+    container_name: redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.6.1
+    container_name: zookeeper
+    restart: unless-stopped
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    ports:
+      - "2181:2181"
+
+  kafka:
+    image: confluentinc/cp-kafka:7.6.1
+    container_name: kafka
+    restart: unless-stopped
+    depends_on:
+      - zookeeper
+    ports:
+      - "9092:9092"
+      - "29092:29092"
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_LISTENERS: INSIDE://:29092,OUTSIDE://:9092
+      KAFKA_ADVERTISED_LISTENERS: INSIDE://kafka:29092,OUTSIDE://localhost:9092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: INSIDE:PLAINTEXT,OUTSIDE:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: INSIDE
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+
+  kafka-ui:
+    image: provectuslabs/kafka-ui:latest
+    container_name: kafka-ui
+    restart: unless-stopped
+    depends_on:
+      - kafka
+    ports:
+      - "8080:8080"
+    environment:
+      KAFKA_CLUSTERS_0_NAME: local
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:29092
+      KAFKA_CLUSTERS_0_ZOOKEEPER: zookeeper:2181
+
+volumes:
+  writer-mongo-data:
+  redis_data:
+  postgres_data:
